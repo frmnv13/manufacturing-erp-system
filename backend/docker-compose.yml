@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: keuangan_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root123}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-keuangan_kampus}
+      MYSQL_USER: ${MYSQL_USER:-keuangan_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-keuangan_pass}
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+
+  api:
+    build:
+      context: ./api
+    container_name: keuangan_api
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${MYSQL_DATABASE:-keuangan_kampus}
+      DB_USER: ${MYSQL_USER:-keuangan_user}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-keuangan_pass}
+      API_TOKEN: ${API_TOKEN:-dev-secret-token}
+      SESSION_TTL_SECONDS: ${SESSION_TTL_SECONDS:-28800}
+    ports:
+      - "${API_PORT:-8080}:80"
+    depends_on:
+      - db
+
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: keuangan_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+    ports:
+      - "${PHPMYADMIN_PORT:-8081}:80"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
